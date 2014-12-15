@@ -1,38 +1,65 @@
-import sys
-import os
+# run-demo.py
+# simple example of gst-switch python api
+
+# pass the path to the binaries:
+# 
+
+import argparse
+
 import time
 from subprocess import call
-
-
-install_dir = os.getcwd()
-print install_dir+'/python-api'
-
-sys.path.insert(0, install_dir+'/python-api')
 
 from gstswitch.helpers import PreviewSinks
 from gstswitch.server import Server
 from gstswitch.helpers import TestSources
 
-path = os.getcwd()
+def wait(secs):
+    print("sleeping {} secconds...".format(secs))
+    time.sleep(secs)
 
-print path
+def main(args):
 
-#sys.path.insert(0, install_dir + 'gst-switch/python-api/gstswitch')
+    print("running server")
+    serv = Server(path=args.path)
+    serv.run()
 
-PATH = install_dir + '/tools/'
-sys.path.insert(0, install_dir+ '/tools')
-print PATH
+    wait(5)
 
-# The default location is '/usr/bin'. Change to wherever the gst-switch executables are located
-serv = Server(path=PATH, video_port=3000, audio_port=4000)
-serv.run()
+    print("running source pattern=1")
+    sources = TestSources(video_port=3000, audio_port=4000)
+    sources.new_test_video(pattern=1)
 
-time.sleep(5)
+    wait(5)
 
-sources = TestSources(video_port=3000, audio_port=4000)
-sources.new_test_video(pattern=1)
-call(["./tools/gst-switch-ui"])
+    print("running gst-switch-ui")
+    # the & will run this in the background so control returns 
+    # and we can bring up the 2nd source 
+    call("gst-switch-ui &", shell=True)
 
-time.sleep(5)
-   
-sources.new_test_video(pattern=18)
+    wait(5)
+       
+    print("running source pattern=18")
+    sources.new_test_video(pattern=18)
+
+    raw_input("hit enter:")
+
+
+    # need to kill off the processes.
+
+    # a better wy of doing is would be to use
+    # https://docs.python.org/2/library/subprocess.html#subprocess.Popen.kill
+    # but I don't feel like figuring it out :p
+
+    call("pkill gst-switch-ui", shell=True)
+    call("pkill gst-switch-srv", shell=True)
+    
+
+def pars_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--path")
+    args = parser.parse_args()
+    return args
+
+if __name__=='__main__':
+    args=pars_args()
+    main(args)
