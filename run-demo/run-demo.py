@@ -7,7 +7,7 @@
 import argparse
 
 import time
-from subprocess import call
+import subprocess
 
 from gstswitch.helpers import PreviewSinks
 from gstswitch.server import Server
@@ -34,7 +34,9 @@ def main(args):
     print("running gst-switch-ui")
     # the & will run this in the background so control returns 
     # and we can bring up the 2nd source 
-    call("gst-switch-ui &", shell=True)
+
+    # Replaced call with subprocess.Popen. 
+    SwitchUi = subprocess.Popen("gst-switch-ui &",shell=True)
 
     wait(5)
        
@@ -44,14 +46,10 @@ def main(args):
     raw_input("hit enter:")
 
 
-    # need to kill off the processes.
+    # Replaced pkill call with Popen.kill
+    subprocess.Popen.kill(SwitchUi)
+    serv.kill()
 
-    # a better wy of doing is would be to use
-    # https://docs.python.org/2/library/subprocess.html#subprocess.Popen.kill
-    # but I don't feel like figuring it out :p
-
-    call("pkill gst-switch-ui", shell=True)
-    call("pkill gst-switch-srv", shell=True)
     
 
 def pars_args():
